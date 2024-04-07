@@ -1,0 +1,18 @@
+{% extends 'store/main.html' %}
+{% block content %}
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-lg-6">
+                <img src="{{ product.imageURL }}" class="img-fluid" alt="{{ product.name }}">
+            </div>
+            <div class="col-lg-6">
+                <h2>{{ product.name }}</h2>
+                <p><strong>Description:</strong> {{ product.description }}</p>
+                <p><strong>Price:</strong> {{ product.price|floatformat:2 }}/=
+                <p><strong>Category:</strong> {{ product.category }}</p>
+                <p><strong>Stock:</strong> {{ product.stock }}</p>
+                <button data-product={{product.id}} data-action="add" class="btn btn-outline-secondary add-btn update-cart">Pick Product</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
