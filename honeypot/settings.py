@@ -11,8 +11,8 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
-
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,10 +22,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$e*x)s3ilrd*$1f)jug&tc4-q1q%ckgcs*^9#w1f72qzp_n1@j'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-$e*x)s3ilrd*$1f)jug&tc4-q1q%ckgcs*^9#w1f72qzp_n1@j')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = []
 
@@ -139,3 +139,35 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'static/images')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # AUTH_PROFILE_MODULE = 'store.UserProfile'
+
+# Mpesa Daraja API Configuration
+MPESA_CONFIG = {
+    'CONSUMER_KEY': config('MPESA_CONSUMER_KEY', default=''),
+    'CONSUMER_SECRET': config('MPESA_CONSUMER_SECRET', default=''),
+    'PASSKEY': config('MPESA_PASSKEY', default=''),
+    'SHORTCODE': config('MPESA_SHORTCODE', default='174379'),
+    'ENVIRONMENT': config('MPESA_ENVIRONMENT', default='sandbox'),
+    'CALLBACK_URL': config('MPESA_CALLBACK_URL', default=''),
+    'TIMEOUT_SECONDS': config('MPESA_TIMEOUT_SECONDS', default=60, cast=int),
+    'MAX_RETRIES': config('MPESA_MAX_RETRIES', default=3, cast=int),
+}
+
+# Validate required Mpesa configuration
+REQUIRED_MPESA_SETTINGS = ['CONSUMER_KEY', 'CONSUMER_SECRET', 'PASSKEY', 'CALLBACK_URL']
+for setting in REQUIRED_MPESA_SETTINGS:
+    if not MPESA_CONFIG[setting]:
+        print(f"Warning: {setting} is not configured. Mpesa payments will not work.")
+
+# Mpesa API URLs
+MPESA_URLS = {
+    'sandbox': {
+        'auth': 'https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+        'stk_push': 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+        'query': 'https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query',
+    },
+    'production': {
+        'auth': 'https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials',
+        'stk_push': 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
+        'query': 'https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query',
+    }
+}

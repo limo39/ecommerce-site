@@ -42,10 +42,23 @@ class Product(models.Model):
 
 
 class Order(models.Model):
+	PAYMENT_METHOD_CHOICES = [
+		('COD', 'Cash on Delivery'),
+		('MPESA', 'Mpesa'),
+	]
+	
+	PAYMENT_STATUS_CHOICES = [
+		('PENDING', 'Pending'),
+		('PAID', 'Paid'),
+		('FAILED', 'Failed'),
+	]
+	
 	customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
 	date_ordered = models.DateTimeField(auto_now_add=True)
 	complete = models.BooleanField(default=False)
 	transaction_id = models.CharField(max_length=100, null=True)
+	payment_method = models.CharField(max_length=10, choices=PAYMENT_METHOD_CHOICES, default='COD')
+	payment_status = models.CharField(max_length=10, choices=PAYMENT_STATUS_CHOICES, default='PENDING')
 
 	def __str__(self):
 		return str(self.id)
@@ -111,6 +124,34 @@ def update_sales_report(sender, instance, created, **kwargs):
                 quantity_sold=item.quantity,
                 total_price=item.quantity * item.product.price
             )
+
+class MpesaTransaction(models.Model):
+    TRANSACTION_STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+        ('CANCELLED', 'Cancelled'),
+        ('TIMEOUT', 'Timeout'),
+    ]
+    
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='mpesa_transaction')
+    phone_number = models.CharField(max_length=15)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    checkout_request_id = models.CharField(max_length=100, unique=True)
+    merchant_request_id = models.CharField(max_length=100)
+    mpesa_receipt_number = models.CharField(max_length=100, null=True, blank=True)
+    transaction_date = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=TRANSACTION_STATUS_CHOICES, default='PENDING')
+    result_code = models.IntegerField(null=True, blank=True)
+    result_desc = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Mpesa Transaction {self.checkout_request_id} - {self.status}"
+    
+    class Meta:
+        ordering = ['-created_at']
 
 @receiver(post_save, sender=OrderItem)
 def update_product_stock(sender, instance, created, **kwargs):

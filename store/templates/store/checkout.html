@@ -7,10 +7,10 @@
                     <form id="form">
                          <div id="user-info">
                               <div class="form-field">
-                                   <input required class="form-control" type="text" name="name" placeholder="Name">
+                                   <input required class="form-control" type="text" name="name" placeholder="Name" id="id_name">
                               </div>
                               <div class="form-field">
-                                   <input required class="form-control" type="email" name="email" placeholder="Email">
+                                   <input required class="form-control" type="email" name="email" placeholder="Email" id="id_email">
                               </div>
                          </div>
                          
@@ -19,19 +19,45 @@
                               <p>Delivery Info:</p>
                               <hr>
                               <div class="form-field">
-                                   <input class="form-control" type="text" name="phone no" placeholder="Phone NO">
+                                   <input class="form-control" type="text" name="phone" placeholder="Phone Number" id="id_phone">
                               </div>
                               <div class="form-field">
-                                   <input class="form-control" type="text" name="address" placeholder="Address">
+                                   <input class="form-control" type="text" name="address" placeholder="Address" id="id_address">
                               </div>
                               <div class="form-field">
-                                   <input class="form-control" type="text" name="town" placeholder="Town">
+                                   <input class="form-control" type="text" name="town" placeholder="Town" id="id_town">
                               </div>
                               <div class="form-field">
-                                   <input class="form-control" type="text" name="county" placeholder="County">
+                                   <input class="form-control" type="text" name="county" placeholder="County" id="id_county">
                               </div>
                               <div class="form-field">
-                                   <input class="form-control" type="text" name="country" placeholder="Country">
+                                   <input class="form-control" type="text" name="country" placeholder="Country" id="id_country">
+                              </div>
+                         </div>
+
+                         <hr>
+                         <div id="payment-method-selection">
+                              <p><strong>Select Payment Method:</strong></p>
+                              <div class="form-check">
+                                   <input class="form-check-input" type="radio" name="payment_method" id="cod_payment" value="COD" checked>
+                                   <label class="form-check-label" for="cod_payment">
+                                        Cash on Delivery
+                                   </label>
+                              </div>
+                              <div class="form-check">
+                                   <input class="form-check-input" type="radio" name="payment_method" id="mpesa_payment" value="MPESA">
+                                   <label class="form-check-label" for="mpesa_payment">
+                                        Mpesa Payment
+                                   </label>
+                              </div>
+                         </div>
+
+                         <div id="mpesa-phone-section" class="hidden">
+                              <hr>
+                              <p><strong>Mpesa Payment Details:</strong></p>
+                              <div class="form-field">
+                                   <input class="form-control" type="tel" name="mpesa_phone" placeholder="Mpesa Phone Number (e.g., 0712345678)" id="id_mpesa_phone">
+                                   <small class="form-text text-muted">Enter the phone number registered with Mpesa</small>
                               </div>
                          </div>
 
@@ -42,28 +68,267 @@
 
                <br>
                <div class="box-element hidden" id="payment-info">
-                    <small>Lipa na M-pesa</small>
+                    <div id="cod-info">
+                         <h5>Cash on Delivery</h5>
+                         <p>You will pay when your order is delivered.</p>
+                         <button id="complete-order-btn" class="btn btn-success btn-block">Complete Order</button>
+                    </div>
+                    <div id="mpesa-info" class="hidden">
+                         <h5>Mpesa Payment</h5>
+                         <p>Click below to initiate Mpesa payment</p>
+                         <button id="pay-with-mpesa-btn" class="btn btn-success btn-block">Pay with Mpesa</button>
+                    </div>
                </div>
                
           </div>
 
           <div class="col-lg-6">
                <div class="box-element">
-                    <a  class="btn btn-outline-dark" href="{% url 'cart' %}">&#x2190; Back to Cart</a>
+                    <a class="btn btn-outline-dark" href="{% url 'cart' %}">&#x2190; Back to Cart</a>
                     <hr>
-                    <h3>Order List</h3>
+                    <h3>Order Summary</h3>
                     <hr>
                     {% for item in items %}
                     <div class="cart-row">
                          <div style="flex:2"><img class="row-image" src="{{item.product.imageURL}}"></div>
-                         <div style="flex:2"><p>{{item.product.name}} </p></div>
-                         <div style="flex:1"><p>{{item.product.price}}/=</p></div>
+                         <div style="flex:2"><p>{{item.product.name}}</p></div>
+                         <div style="flex:1"><p>KSh {{item.product.price}}</p></div>
                          <div style="flex:1"><p>x{{item.quantity}}</p></div>
                     </div>
                     {% endfor %}
-                    <h5>Items:   {{order.get_cart_items}}</h5>
-                    <h5>Total:   {{order.get_cart_total|floatformat:2}}/=</h5>
+                    <hr>
+                    <h5>Items: {{order.get_cart_items}}</h5>
+                    <h5><strong>Total: KSh {{order.get_cart_total|floatformat:2}}</strong></h5>
+                    <input type="hidden" id="order-id" value="{{order.id}}">
+                    <input type="hidden" id="order-total" value="{{order.get_cart_total}}">
                </div>
           </div>
      </div>
+
+     <!-- Payment Status Modal -->
+     <div class="modal fade" id="paymentStatusModal" tabindex="-1" role="dialog" aria-labelledby="paymentStatusModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered" role="document">
+               <div class="modal-content">
+                    <div class="modal-header">
+                         <h5 class="modal-title" id="paymentStatusModalLabel">Payment Status</h5>
+                    </div>
+                    <div class="modal-body text-center">
+                         <div id="payment-loading" class="hidden">
+                              <div class="spinner-border text-primary" role="status">
+                                   <span class="sr-only">Loading...</span>
+                              </div>
+                              <p class="mt-3">Processing payment...</p>
+                              <p class="text-muted">Please check your phone for the Mpesa prompt</p>
+                         </div>
+                         <div id="payment-success" class="hidden">
+                              <div class="text-success">
+                                   <i class="fas fa-check-circle fa-3x"></i>
+                              </div>
+                              <h4 class="text-success mt-3">Payment Successful!</h4>
+                              <p id="success-message"></p>
+                         </div>
+                         <div id="payment-failed" class="hidden">
+                              <div class="text-danger">
+                                   <i class="fas fa-times-circle fa-3x"></i>
+                              </div>
+                              <h4 class="text-danger mt-3">Payment Failed</h4>
+                              <p id="error-message"></p>
+                         </div>
+                    </div>
+                    <div class="modal-footer">
+                         <button type="button" class="btn btn-secondary" id="modal-close-btn">Close</button>
+                         <button type="button" class="btn btn-primary hidden" id="retry-payment-btn">Retry Payment</button>
+                         <button type="button" class="btn btn-success hidden" id="view-order-btn">View Order</button>
+                    </div>
+               </div>
+          </div>
+     </div>
+
+     <script>
+          // Checkout form handling
+          document.addEventListener('DOMContentLoaded', function() {
+               const form = document.getElementById('form');
+               const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+               const mpesaPhoneSection = document.getElementById('mpesa-phone-section');
+               const paymentInfo = document.getElementById('payment-info');
+               const codInfo = document.getElementById('cod-info');
+               const mpesaInfo = document.getElementById('mpesa-info');
+               
+               // Handle payment method selection
+               paymentMethodRadios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                         if (this.value === 'MPESA') {
+                              mpesaPhoneSection.classList.remove('hidden');
+                         } else {
+                              mpesaPhoneSection.classList.add('hidden');
+                         }
+                    });
+               });
+               
+               // Handle form submission
+               form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Validate form
+                    const name = document.getElementById('id_name').value;
+                    const email = document.getElementById('id_email').value;
+                    const phone = document.getElementById('id_phone').value;
+                    const address = document.getElementById('id_address').value;
+                    
+                    if (!name || !email || !phone || !address) {
+                         alert('Please fill in all required fields');
+                         return;
+                    }
+                    
+                    // Show payment options
+                    paymentInfo.classList.remove('hidden');
+                    
+                    // Show appropriate payment info
+                    const selectedPaymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+                    if (selectedPaymentMethod === 'MPESA') {
+                         codInfo.classList.add('hidden');
+                         mpesaInfo.classList.remove('hidden');
+                    } else {
+                         mpesaInfo.classList.add('hidden');
+                         codInfo.classList.remove('hidden');
+                    }
+               });
+               
+               // Handle Mpesa payment
+               document.getElementById('pay-with-mpesa-btn').addEventListener('click', function() {
+                    const mpesaPhone = document.getElementById('id_mpesa_phone').value;
+                    const orderId = document.getElementById('order-id').value;
+                    
+                    if (!mpesaPhone) {
+                         alert('Please enter your Mpesa phone number');
+                         return;
+                    }
+                    
+                    // Validate phone number format
+                    const phoneRegex = /^(0|\+254|254)?[17]\d{8}$/;
+                    if (!phoneRegex.test(mpesaPhone.replace(/\s/g, ''))) {
+                         alert('Please enter a valid Kenyan phone number (e.g., 0712345678)');
+                         return;
+                    }
+                    
+                    initiateMpesaPayment(mpesaPhone, orderId);
+               });
+               
+               // Handle COD order completion
+               document.getElementById('complete-order-btn').addEventListener('click', function() {
+                    // For now, just redirect to success page
+                    // In a full implementation, you'd process the COD order
+                    alert('Cash on Delivery order will be processed. You will be contacted for delivery.');
+               });
+          });
+          
+          function initiateMpesaPayment(phoneNumber, orderId) {
+               // Show loading modal
+               showPaymentModal('loading', 'Initiating payment...');
+               
+               fetch('{% url "initiate_mpesa" %}', {
+                    method: 'POST',
+                    headers: {
+                         'Content-Type': 'application/json',
+                         'X-CSRFToken': csrftoken,
+                    },
+                    body: JSON.stringify({
+                         phone_number: phoneNumber,
+                         order_id: orderId
+                    })
+               })
+               .then(response => response.json())
+               .then(data => {
+                    if (data.success) {
+                         // Start polling for payment status
+                         pollPaymentStatus(data.checkout_request_id, orderId);
+                    } else {
+                         showPaymentModal('failed', data.error || 'Payment initiation failed');
+                    }
+               })
+               .catch(error => {
+                    console.error('Error:', error);
+                    showPaymentModal('failed', 'Network error. Please try again.');
+               });
+          }
+          
+          function pollPaymentStatus(checkoutRequestId, orderId) {
+               let pollCount = 0;
+               const maxPolls = 60; // Poll for 60 seconds
+               
+               const pollInterval = setInterval(() => {
+                    pollCount++;
+                    
+                    if (pollCount > maxPolls) {
+                         clearInterval(pollInterval);
+                         showPaymentModal('failed', 'Payment timeout. Please try again.');
+                         return;
+                    }
+                    
+                    fetch(`/mpesa/status/${checkoutRequestId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                         if (data.success) {
+                              if (data.status === 'SUCCESS') {
+                                   clearInterval(pollInterval);
+                                   showPaymentModal('success', `Payment successful! Receipt: ${data.mpesa_receipt_number}`, orderId);
+                              } else if (data.status === 'FAILED' || data.status === 'CANCELLED') {
+                                   clearInterval(pollInterval);
+                                   showPaymentModal('failed', data.result_desc || 'Payment failed');
+                              }
+                              // Continue polling if status is still PENDING
+                         }
+                    })
+                    .catch(error => {
+                         console.error('Polling error:', error);
+                    });
+               }, 1000); // Poll every second
+          }
+          
+          function showPaymentModal(status, message, orderId = null) {
+               const modal = document.getElementById('paymentStatusModal');
+               const loadingDiv = document.getElementById('payment-loading');
+               const successDiv = document.getElementById('payment-success');
+               const failedDiv = document.getElementById('payment-failed');
+               const retryBtn = document.getElementById('retry-payment-btn');
+               const viewOrderBtn = document.getElementById('view-order-btn');
+               
+               // Hide all status divs
+               loadingDiv.classList.add('hidden');
+               successDiv.classList.add('hidden');
+               failedDiv.classList.add('hidden');
+               retryBtn.classList.add('hidden');
+               viewOrderBtn.classList.add('hidden');
+               
+               // Show appropriate status
+               if (status === 'loading') {
+                    loadingDiv.classList.remove('hidden');
+               } else if (status === 'success') {
+                    successDiv.classList.remove('hidden');
+                    document.getElementById('success-message').textContent = message;
+                    viewOrderBtn.classList.remove('hidden');
+                    if (orderId) {
+                         viewOrderBtn.onclick = () => window.location.href = `/payment/success/${orderId}/`;
+                    }
+               } else if (status === 'failed') {
+                    failedDiv.classList.remove('hidden');
+                    document.getElementById('error-message').textContent = message;
+                    retryBtn.classList.remove('hidden');
+               }
+               
+               // Show modal
+               $(modal).modal('show');
+          }
+          
+          // Modal close handler
+          document.getElementById('modal-close-btn').addEventListener('click', function() {
+               $('#paymentStatusModal').modal('hide');
+          });
+          
+          // Retry payment handler
+          document.getElementById('retry-payment-btn').addEventListener('click', function() {
+               $('#paymentStatusModal').modal('hide');
+               // User can try payment again
+          });
+     </script>
 {% endblock content %}

@@ -1,0 +1,93 @@
+{% extends 'store/main.html' %}
+{% load static %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="box-element text-center">
+                <div class="text-success mb-4">
+                    <i class="fas fa-check-circle" style="font-size: 4rem;"></i>
+                </div>
+                <h2 class="text-success">Payment Successful!</h2>
+                <p class="lead">Thank you for your payment. Your order has been confirmed.</p>
+                
+                {% if mpesa_transaction %}
+                <div class="alert alert-success">
+                    <strong>Mpesa Receipt:</strong> {{ mpesa_transaction.mpesa_receipt_number }}<br>
+                    <strong>Transaction Date:</strong> {{ mpesa_transaction.transaction_date|date:"M d, Y H:i" }}<br>
+                    <strong>Amount Paid:</strong> KSh {{ mpesa_transaction.amount|floatformat:2 }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="box-element">
+                <h4>Order Details</h4>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Order ID:</strong> #{{ order.id }}</p>
+                        <p><strong>Date:</strong> {{ order.date_ordered|date:"M d, Y H:i" }}</p>
+                        <p><strong>Payment Method:</strong> {{ order.get_payment_method_display }}</p>
+                        <p><strong>Status:</strong> 
+                            <span class="badge badge-success">{{ order.get_payment_status_display }}</span>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Items:</strong> {{ order.get_cart_items }}</p>
+                        <p><strong>Total Amount:</strong> KSh {{ order.get_cart_total|floatformat:2 }}</p>
+                    </div>
+                </div>
+                
+                <h5 class="mt-4">Items Ordered:</h5>
+                <hr>
+                {% for item in items %}
+                <div class="cart-row">
+                    <div style="flex:2">
+                        <img class="row-image" src="{{ item.product.imageURL }}" alt="{{ item.product.name }}">
+                    </div>
+                    <div style="flex:3">
+                        <p><strong>{{ item.product.name }}</strong></p>
+                        <p class="text-muted">{{ item.product.description|truncatewords:10 }}</p>
+                    </div>
+                    <div style="flex:1">
+                        <p>KSh {{ item.product.price }}</p>
+                    </div>
+                    <div style="flex:1">
+                        <p>Qty: {{ item.quantity }}</p>
+                    </div>
+                    <div style="flex:1">
+                        <p><strong>KSh {{ item.get_total|floatformat:2 }}</strong></p>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="text-right mt-3">
+                    <h5><strong>Total: KSh {{ order.get_cart_total|floatformat:2 }}</strong></h5>
+                </div>
+            </div>
+            
+            <div class="box-element">
+                <h5>What's Next?</h5>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check text-success"></i> You will receive an SMS confirmation shortly</li>
+                    <li><i class="fas fa-truck text-info"></i> Your order will be processed and shipped within 1-2 business days</li>
+                    <li><i class="fas fa-phone text-primary"></i> We'll contact you if we need any additional information</li>
+                </ul>
+                
+                <div class="text-center mt-4">
+                    <a href="{% url 'store' %}" class="btn btn-primary mr-3">Continue Shopping</a>
+                    <button onclick="window.print()" class="btn btn-outline-secondary">Print Receipt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .navbar, .box-element:last-child {
+        display: none !important;
+    }
+}
+</style>
+{% endblock content %}
